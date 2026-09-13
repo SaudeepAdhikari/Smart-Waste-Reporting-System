@@ -15,7 +15,7 @@ import {
   type LocationCaptureStatus,
   type ReportFormValues,
 } from '@/types/reports';
-import { reportsService } from '@/services/api/reports';
+import { useCreateReport } from '@/services/queries/reports';
 import { ApiError } from '@/services/api/client';
 import { WasteTypeField } from './waste-type-field';
 import { QuantityField } from './quantity-field';
@@ -101,8 +101,20 @@ function getCitizenFriendlyError(error: unknown): string {
     ) {
       return 'Report submission service is not connected yet. Please try again later.';
     }
+    if (error.statusCode === 401 || error.statusCode === 403) {
+      return 'Your session has expired. Please sign in again to submit a report.';
+    }
     if (error.statusCode === 404 || error.statusCode === 501) {
       return 'Report submission service is not connected yet. Please try again later.';
+    }
+    if (error.statusCode === 400) {
+      const messages = Array.isArray(error.details)
+        ? error.details.filter((detail): detail is string => typeof detail === 'string')
+        : [];
+      if (messages.length > 0) {
+        return messages.join('. ');
+      }
+      return error.message || 'Please check your details and try submitting again.';
     }
     if (error.statusCode && error.statusCode >= 500) {
       return 'The reporting service is temporarily unavailable. Please try again later.';
@@ -133,6 +145,8 @@ function revokeImageUrls(images: EvidenceImageItem[]) {
 export function ReportForm() {
   const router = useRouter();
   const imagesRef = useRef<EvidenceImageItem[]>([]);
+  const createReport = useCreateReport();
+  const isSubmitting = createReport.isPending;
 
   const {
     control,
@@ -142,7 +156,7 @@ export function ReportForm() {
     getValues,
     setError,
     clearErrors,
-    formState: { errors, isSubmitting, isDirty },
+    formState: { errors, isDirty },
   } = useForm<ReportFormValues, unknown, ReportFormSchemaData>({
     resolver: zodResolver(reportFormSchema) as Resolver<
       ReportFormValues,
@@ -179,14 +193,13 @@ export function ReportForm() {
   const onSubmit = async (data: ReportFormSchemaData) => {
     clearErrors('root');
 
-    try {
-      const payload = buildCreateReportPayload(data);
-      await reportsService.submitReport(payload);
+    const payload = buildCreateReportPayload(data);
 
-      // Real success path — only reachable when the backend confirms acceptance.
+    try {
+      const report = await createReport.mutateAsync(payload);
       revokeImageUrls(data.images);
       setValue('images', [], { shouldDirty: false });
-      router.push('/reports');
+      router.push(`/reports/${report.id}`);
     } catch (error) {
       setError('root', {
         type: 'manual',

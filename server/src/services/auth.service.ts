@@ -5,17 +5,18 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserRepository } from '../repositories/user.repository';
-import { RegisterDto } from '../dto/auth.dto';
-import { LoginDto } from '../dto/auth.dto';
+import { RegisterDto, LoginDto } from '../dto/auth.dto';
 import { hashPassword, comparePassword } from '../utils/password';
 import type { AuthenticatedUser, JwtPayload } from '../middleware/jwt.strategy';
+import { DEFAULT_ROLE, type UserRole } from '../constants/roles';
 
 export interface AuthUserResponse {
   id: string;
   email: string;
   fullName: string;
   phone: string;
-  role: 'CITIZEN';
+  role: UserRole;
+  isActive: boolean;
 }
 
 export interface AuthResponse {
@@ -40,21 +41,35 @@ export class AuthService {
       throw new ConflictException('Passwords do not match');
     }
 
+    const role: UserRole = DEFAULT_ROLE;
+
     const passwordHash = await hashPassword(dto.password);
     const user = await this.userRepository.create({
       fullName: dto.fullName,
       email: dto.email,
       phone: dto.phone,
       passwordHash,
+      role,
     });
 
-    return this.buildAuthResponse(user._id.toString(), user.email, user.fullName, user.phone, user.role);
+    return this.buildAuthResponse(
+      user._id.toString(),
+      user.email,
+      user.fullName,
+      user.phone,
+      user.role,
+      user.isActive
+    );
   }
 
   async login(dto: LoginDto): Promise<AuthResponse> {
     const user = await this.userRepository.findByEmail(dto.email);
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account is inactive');
     }
 
     const passwordValid = await comparePassword(dto.password, user.passwordHash);
@@ -67,8 +82,9 @@ export class AuthService {
       user.email,
       user.fullName,
       user.phone,
-      user.role
-  );
+      user.role,
+      user.isActive
+    );
   }
 
   async me(userId: string): Promise<AuthUserResponse> {
@@ -82,11 +98,14 @@ export class AuthService {
       email: user.email,
       fullName: user.fullName,
       phone: user.phone,
-      role: user.role as 'CITIZEN',
+      role: user.role,
+      isActive: user.isActive,
     };
   }
 
   async logout(): Promise<void> {
+    // Stateless JWT: nothing to do server-side.
+    // Client is expected to discard the token.
     return;
   }
 
@@ -95,12 +114,13 @@ export class AuthService {
     email: string,
     fullName: string,
     phone: string,
-    role: string
+    role: UserRole,
+    isActive: boolean
   ): AuthResponse {
     const payload: JwtPayload = { sub: userId, email, role };
     const token = this.jwtService.sign(payload);
     return {
-      user: { id: userId, email, fullName, phone, role: role as 'CITIZEN' },
+      user: { id: userId, email, fullName, phone, role, isActive },
       token,
     };
   }

@@ -5,6 +5,6 @@ import type { AuthenticatedUser } from '../../middleware/jwt.strategy';
 export const CurrentUser = createParamDecorator(
   (_data: unknown, context: ExecutionContext): AuthenticatedUser => {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    return request.user as AuthenticatedUser;
+    return request.user;
   }
 );

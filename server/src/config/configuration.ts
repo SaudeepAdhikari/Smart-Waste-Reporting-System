@@ -15,6 +15,7 @@ export interface CorsConfig {
 
 export interface AppConfig {
   port: number;
+  nodeEnv: string;
   mongo: MongoConfig;
   jwt: JwtConfig;
   cors: CorsConfig;
@@ -28,19 +29,27 @@ function coerceNumber(value: string | undefined, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function requireEnv(key: string): string {
+  const value = process.env[key];
+  if (!value || value.trim() === '') {
+    throw new Error(`Required environment variable ${key} is not set`);
+  }
+  return value;
+}
+
 export const config = registerAs('app', (): AppConfig => {
-  const mongoUri =
-    process.env.MONGODB_URI ||
-    process.env.MONGO_URI ||
-    'mongodb://127.0.0.1:27017/smart-waste';
+  const mongoUri = requireEnv('MONGODB_URI');
 
-  const jwtSecret = process.env.JWT_SECRET || 'dev-secret-change-me';
-  const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '7d';
+  const jwtSecret = requireEnv('JWT_SECRET');
+  const jwtExpiresIn = requireEnv('JWT_EXPIRES_IN');
 
-  const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
+  const corsOrigin = requireEnv('CORS_ORIGIN');
+
+  const nodeEnv = process.env.NODE_ENV ?? 'development';
 
   return {
     port: coerceNumber(process.env.PORT, 5000),
+    nodeEnv,
     mongo: { uri: mongoUri },
     jwt: { secret: jwtSecret, expiresIn: jwtExpiresIn },
     cors: { origin: corsOrigin },

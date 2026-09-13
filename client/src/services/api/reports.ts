@@ -1,14 +1,14 @@
 import { apiClient } from './client';
 import type {
   CreateReportPayload,
-  Report,
+  WasteReport,
   ReportSummary,
 } from '@/types/reports';
 import type { PaginatedResponse } from '@/types/api';
 
 export class ReportsService {
-  async getMyReports(): Promise<Report[]> {
-    const response = await apiClient.get<PaginatedResponse<Report>>(
+  async getMyReports(): Promise<WasteReport[]> {
+    const response = await apiClient.get<PaginatedResponse<WasteReport>>(
       '/api/v1/reports/my?page=1&limit=20'
     );
     return response.items;
@@ -21,22 +21,21 @@ export class ReportsService {
     return response;
   }
 
-  async getReportById(id: string): Promise<Report> {
-    const response = await apiClient.get<Report>(
+  async getReportById(id: string): Promise<WasteReport> {
+    const response = await apiClient.get<WasteReport>(
       `/api/v1/reports/${encodeURIComponent(id)}`
     );
     return response;
   }
 
-  /**
-   * Submit a citizen waste report.
-   * Endpoint: POST /api/v1/reports
-   *
-   * Image binary upload is intentionally deferred. When cloud storage is ready,
-   * upload images first, then include resulting URLs in a follow-up payload shape.
-   */
-  async submitReport(payload: CreateReportPayload): Promise<Report> {
-    return apiClient.post<Report>('/api/v1/reports', payload);
+  async createReport(payload: CreateReportPayload): Promise<WasteReport> {
+    return apiClient.post<WasteReport>('/api/v1/reports', payload);
+  }
+
+  async cancelReport(id: string): Promise<WasteReport> {
+    return apiClient.patch<WasteReport>(
+      `/api/v1/reports/${encodeURIComponent(id)}/cancel`
+    );
   }
 }
 

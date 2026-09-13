@@ -64,8 +64,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
         } else {
           details = [];
         }
-        if (res.error) {
-          code = res.error;
+        if (res.code) {
+          code = res.code;
         }
       }
 

@@ -4,7 +4,8 @@ import { JwtModule, type JwtModuleOptions, type JwtSignOptions } from '@nestjs/j
 import { AuthController } from './controllers/auth.controller';
 import { AuthService } from './services/auth.service';
 import { UserRepository } from './repositories/user.repository';
-import { JwtAuthGuard } from './middleware/jwt.strategy';
+import { JwtStrategy, JwtAuthGuard } from './middleware/jwt.strategy';
+import { RolesGuard } from './guards/roles.guard';
 
 @Module({
   imports: [
@@ -13,15 +14,17 @@ import { JwtAuthGuard } from './middleware/jwt.strategy';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService): JwtModuleOptions => ({
-        secret: configService.get<string>('app.jwt.secret'),
+        secret: configService.getOrThrow<string>('app.jwt.secret'),
         signOptions: {
-          expiresIn: configService.get<string>('app.jwt.expiresIn') as JwtSignOptions['expiresIn'],
+          expiresIn: configService.getOrThrow<JwtSignOptions['expiresIn']>(
+            'app.jwt.expiresIn'
+          ),
         },
       }),
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UserRepository, JwtAuthGuard],
-  exports: [JwtAuthGuard, JwtModule],
+  providers: [AuthService, UserRepository, JwtStrategy, JwtAuthGuard, RolesGuard],
+  exports: [JwtStrategy, JwtAuthGuard, RolesGuard, JwtModule, AuthService, UserRepository],
 })
 export class AuthModule {}

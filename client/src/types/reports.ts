@@ -41,14 +41,29 @@ export interface ReportSummary {
   resolved: number;
 }
 
-export interface Report {
+export interface ReportImage {
   id: string;
-  wasteType: string;
-  location: string;
+  url: string;
+}
+
+export interface WasteReport {
+  id: string;
+  citizenId: string;
+  wasteType: WasteType;
+  description: string;
+  estimatedQuantity: number;
+  quantityUnit: QuantityUnit;
+  severity: ReportSeverity;
+  location: GeoJsonPoint;
+  address: string;
+  images: string[];
   status: ReportStatus;
   submittedAt: string;
-  priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+  updatedAt: string;
+  resolvedAt: string | null;
 }
+
+export type CreateReportInput = CreateReportPayload;
 
 /** Client-side evidence file before remote upload is implemented. */
 export interface EvidenceImageItem {

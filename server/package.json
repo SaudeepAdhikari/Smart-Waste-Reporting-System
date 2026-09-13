@@ -13,7 +13,10 @@
     "start:dev": "node -r ts-node/register src/main.ts",
     "start:debug": "node --inspect --inspect-brk=0.0.0.0:9229 -r ts-node/register src/main.ts",
     "e2e:server": "node -r ts-node/register tests/e2e-bootstrap.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "lint": "eslint \"src/**/*.ts\" --fix"
   },
   "keywords": [],
   "author": "",
@@ -39,11 +42,20 @@
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.0",
+    "@nestjs/testing": "^12.0.1",
     "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.20.2",
     "@types/pg": "^8.23.1",
+    "@types/supertest": "^7.2.1",
     "@types/uuid": "^11.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.70.0",
+    "@typescript-eslint/parser": "^8.70.0",
+    "eslint": "^10.10.0",
+    "jest": "^30.5.1",
     "mongodb-memory-server": "^11.2.0",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.12",
     "ts-node": "^10.9.2",
     "tsx": "^4.23.13",
     "typescript": "^5.9.3"

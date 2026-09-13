@@ -17,7 +17,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "lib": ["ES2022"],
-    "types": ["node"],
+    "types": ["node", "jest"],
     "baseUrl": "."
   },
   "include": ["src"],

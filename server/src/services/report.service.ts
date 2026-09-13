@@ -2,12 +2,11 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { ReportRepository } from '../repositories/report.repository';
 import { CreateReportDto } from '../dto/report.dto';
-import { CITIZEN_CANCELABLE_STATUSES, type ReportStatus } from '../constants/report.constants';
+import { CITIZEN_CANCELABLE_STATUSES } from '../constants/report.constants';
 import type { AuthenticatedUser } from '../middleware/jwt.strategy';
 import type { ReportDocument } from '../models/report.schema';
 
@@ -85,11 +84,6 @@ export class ReportService {
   }
 
   async getSummary(user: AuthenticatedUser): Promise<ReportSummary> {
-    const { items } = await this.reportRepository.findByCitizen(
-      new Types.ObjectId(user.userId),
-      { page: 1, limit: 1 }
-    );
-    // items is a subset; compute counts via a dedicated aggregation for accuracy.
     return this.reportRepository.getSummary(new Types.ObjectId(user.userId));
   }
 

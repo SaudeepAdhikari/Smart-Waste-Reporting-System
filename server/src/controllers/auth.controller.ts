@@ -1,15 +1,12 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from '../services/auth.service';
 import { LoginDto, RegisterDto } from '../dto/auth.dto';
 import { JwtAuthGuard } from '../middleware/jwt.strategy';
+import { RolesGuard } from '../guards/roles.guard';
+import { Roles } from '../decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../middleware/jwt.strategy';
+import { MUNICIPALITY_ROLE } from '../constants/roles';
 
 @Controller('auth')
 export class AuthController {
@@ -36,5 +33,15 @@ export class AuthController {
   async logout() {
     await this.authService.logout();
     return null;
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(MUNICIPALITY_ROLE)
+  @Get('municipality-only')
+  async municipalityOnly(@CurrentUser() user: AuthenticatedUser) {
+    return {
+      message: `Hello ${user.email}. You have access to this municipality endpoint.`,
+      role: user.role,
+    };
   }
 }

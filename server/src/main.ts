@@ -11,12 +11,34 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
+  const nodeEnv = configService.get<string>('app.nodeEnv') ?? 'development';
   const corsOrigin = configService.get<string>('app.cors.origin') ?? '*';
 
-  app.enableCors({
-    origin: corsOrigin,
-    credentials: true,
-  });
+  // Configure CORS
+  // In development, allow multiple local frontend origins
+  // In production, only allow the specific configured origin
+  let corsOptions: { origin: string | string[]; credentials: boolean };
+
+  if (nodeEnv === 'production') {
+    corsOptions = {
+      origin: corsOrigin,
+      credentials: true,
+    };
+  } else {
+    // Development: allow common local frontend ports
+    corsOptions = {
+      origin: [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:3001',
+        corsOrigin,
+      ],
+      credentials: true,
+    };
+  }
+
+  app.enableCors(corsOptions);
 
   app.setGlobalPrefix('api/v1');
 
@@ -24,6 +46,10 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       transform: true,
+      forbidNonWhitelisted: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
     })
   );
 

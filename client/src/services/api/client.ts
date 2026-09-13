@@ -1,11 +1,13 @@
 import { config } from '@/lib/config';
+import { getToken } from '@/lib/auth-store';
 import type { ApiResponse } from '@/types/api';
 
 export class ApiError extends Error {
   constructor(
     message: string,
     public statusCode?: number,
-    public code?: string
+    public code?: string,
+    public details?: unknown[]
   ) {
     super(message);
     this.name = 'ApiError';
@@ -32,38 +34,48 @@ export async function apiRequest<T>(
     'Content-Type': 'application/json',
   };
   
+  const token = getToken();
+
   const requestOptions: RequestInit = {
     ...options,
     headers: {
       ...defaultHeaders,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   };
-  
+
   try {
     const response = await fetch(url, requestOptions);
     
-    if (!response.ok) {
+     if (!response.ok) {
       let errorMessage = `HTTP error! status: ${response.status}`;
       let errorCode: string | undefined;
+      let errorDetails: unknown[] | undefined;
       
       try {
         const errorData = await response.json() as ApiResponse<never>;
         if (errorData.success === false) {
           errorMessage = errorData.message;
-          errorCode = errorData.error.code;
+          errorCode = errorData.error?.code;
+          errorDetails = errorData.error?.details;
         }
       } catch {
         // If parsing error response fails, use default message
       }
       
-      throw new ApiError(errorMessage, response.status, errorCode);
+      throw new ApiError(errorMessage, response.status, errorCode, errorDetails);
     }
     
     const data = await parseResponse<ApiResponse<T>>(response);
     
     if (data.success === false) {
-      throw new ApiError(data.message, undefined, data.error.code);
+      throw new ApiError(
+        data.message,
+        undefined,
+        data.error.code,
+        data.error.details
+      );
     }
     
     return data.data;

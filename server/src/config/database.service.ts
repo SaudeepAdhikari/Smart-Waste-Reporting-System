@@ -8,14 +8,12 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit(): Promise<void> {
     const uri =
       process.env.MONGODB_URI ||
-      process.env.MONGO_URI ||
-      'mongodb://127.0.0.1:27017/smart-waste';
+      process.env.MONGO_URI;
 
     if (!uri) {
-      this.logger.error(
-        'MONGODB_URI is not configured. Database features will be unavailable.'
-      );
-      return;
+      const error = new Error('MONGODB_URI is not configured');
+      this.logger.error('MONGODB_URI is not configured. Database connection failed.');
+      throw error;
     }
 
     try {
@@ -27,12 +25,14 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.logger.error(`Unable to connect to MongoDB at ${uri}: ${message}`);
+      throw new Error(`MongoDB connection failed: ${message}`);
     }
   }
 
   async onModuleDestroy(): Promise<void> {
     try {
       await mongoose.disconnect();
+      this.logger.log('Disconnected from MongoDB');
     } catch {
       // ignore
     }

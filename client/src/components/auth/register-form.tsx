@@ -3,12 +3,17 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { registerSchema, type RegisterFormData } from '@/lib/validation/auth';
 import { Input } from './input';
 import { PasswordInput } from './password-input';
 import { SubmitButton } from './submit-button';
+import { useAuth } from '@/providers/auth-provider';
 
 export function RegisterForm() {
+  const { register: registerUser } = useAuth();
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
@@ -25,16 +30,10 @@ export function RegisterForm() {
     },
   });
 
-  const onSubmit = async (_data: RegisterFormData) => {
+  const onSubmit = async (data: RegisterFormData) => {
     try {
-      // TODO: Use authService.register when backend is ready
-      // const response = await authService.register(data);
-      // await login({ email: data.email, password: data.password });
-      // router.push('/reports');
-      setError('root', {
-        type: 'manual',
-        message: 'Authentication service not connected to backend yet',
-      });
+      await registerUser(data);
+      router.push('/reports');
     } catch (error) {
       setError('root', {
         type: 'manual',
